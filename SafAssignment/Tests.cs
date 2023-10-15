@@ -2,12 +2,10 @@
 using OpenQA.Selenium;              // IWebDriver, IWebElement
 using OpenQA.Selenium.Chrome;       // ChromeDriver
 using OpenQA.Selenium.Interactions; // Actions
-using OpenQA.Selenium.Support.UI;   // WebDriverWait
-using SeleniumExtras.WaitHelpers;   // ExpectedConditions
 
 namespace SafAssignment
 {
-    public class CommonTest
+    public class CommonTest : Base
     {
         /* Tady bude:
          * Vytvořte třídu CommonTest – base třída pro všechny testy. Součástí této třídy musí být:
@@ -16,70 +14,11 @@ namespace SafAssignment
          *          Metoda [TearDown] zaloguje výsledek testu
          */
 
-        // *** Constanty a IWebDriver ***
-        // Driver
-        protected IWebDriver driver;
-
-        // URL
-        protected const string baseUrl = "https://teams.microsoft.com/";
-        protected const string chatUrl = "https://teams.microsoft.com/_#/conversations/48:notes?ctx=chat";
-
-        // Prihlaseni
-        protected const string input_name = "dlp.automation3@safeticadlptesting.onmicrosoft.com";
-        protected const string id_name = "i0116";
-        protected const string id_loginNext = "idSIButton9";
-        protected const string input_password = "Password.dlp";
-        protected const string id_password = "i0118";
-        protected const string id_loginNextNo = "idBtn_Back";
-
-        // Menu -> Chat
-        protected const string xPath_blockingPopup = "//button[@type='button' and @role='button' and @title='Zavřít']";
-        protected const string id_menuChat = "app-bar-86fcd49b-61a2-4701-b771-54728cd291fb";
-
-        // Pripoj soubory
-        protected const string cssSelector_addFiles = ".fui-Flex:nth-child(2) .ui-toolbar__item:nth-child(2) .ui-icon > .jr";
-        protected const string cssSelector_addFilesFromDrive = ".ui-menu__itemwrapper:nth-child(1) .fui-StyledText";
-
-        // Soubory
-        protected const string xPath_findExcelByText = "//*[contains(text(),'ExcelFile.xlsx')]";
-        protected const string xPath_findPresentationByText = "//*[contains(text(),'Presentation.xlsx')]";
-        protected const string xPath_buttonAddFileByText = "//*[contains(text(),'Připojit')]";
-
-        // Text
-        protected const string cssSelector_chatWindow = ".ck-placeholder";
-        protected string chatText = "Test";
-
-        // Chat -> Odesílání
-        protected const string cssSelector_sendChatContents = ".ms-FocusZone:nth-child(3) .ui-icon > .jq";
-
-
-        // *** Metody ***
-        // WaitForElementToBeVisible čeká na zobrazení elementu na stránce (30 vteřin, jinak Timeout)
-        public IWebElement WaitForElementToBeVisible(By by, int vteriny = 30)
-        {
-            var waitVisible = new WebDriverWait(driver, TimeSpan.FromSeconds(vteriny));     
-            return waitVisible.Until(ExpectedConditions.ElementIsVisible(by));
-        }
-
-        //
-
-        public void ElementAndClick(By element)
-        {
-            IWebElement passedElement = WaitForElementToBeVisible(element);
-            passedElement.Click();
-        }
-        // priklad uziti:
-        // id ->            ElementAndClick(By.Id("tady-bude-nejaky-string"));
-        // Xpath ->         ElementAndClick(ByXPath("tady-bude-nejaky-string"));
-        // CssSelector ->   ElementAndClick(By.CssSelector("tady-bude-nejaky-string"));
-
-        public void PrihlaseniDal(string prihlaseniTlacitkoDalsi)
-        {
-            IWebElement pokracuj = WaitForElementToBeVisible(By.Id(prihlaseniTlacitkoDalsi));
-            pokracuj.Click();
-        }
-
         // --- OneTime SetuP&TearDown - běží před testy a po testech ---
+
+        private int i = 1;
+        public static List<string> logs = new List<string>();
+
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
@@ -89,21 +28,25 @@ namespace SafAssignment
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
+            LoggingOfTests.WriteLogsToFile(logs, "PokusneLogy.txt");
+            File.Exists("PokusneLogy.txt");
             driver.Quit();
         }
 
         // --- SetUp&TearDown - běží před a po každém testu ---
-        /*
+
         [SetUp] public void SetUp()
         {
             // tady bude metoda která zaloguje test, který je spouštěn
+            LoggingOfTests.LogStartOfTest(logs, i);
         }
 
         [TearDown] public void TearDown()
         {
             // tady bude metoda, která zaloguje výsledek testu
+            LoggingOfTests.LogEndOfTest(logs, i);
+            i++;
         }
-        */
     }
 
     public class TeamsChromeTest : CommonTest
@@ -130,6 +73,7 @@ namespace SafAssignment
             Assert.AreEqual(input_name, poleJmeno.GetAttribute("value"));
 
             // pocka na zobrazeni tlacitka, klikne (posune nás k heslu)
+
             PrihlaseniDal(id_loginNext);
         }
 
@@ -173,11 +117,10 @@ namespace SafAssignment
             IWebElement pripojSouboryDrive = WaitForElementToBeVisible(By.CssSelector(cssSelector_addFilesFromDrive));
             pripojSouboryDrive.Click();
         }
-
+        
         [Test, Order(6)]
         public void T06_SelectExcelFile()
         {
-            /*default -> frame0 -> frame 0*/
             driver.SwitchTo().DefaultContent();
             driver.SwitchTo().Frame(0);          // 0 frame
             Thread.Sleep(2000);
