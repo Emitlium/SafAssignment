@@ -28,6 +28,7 @@ namespace SafAssignment
             // maximalizuje okno a otevře url
             driver.Manage().Window.Maximize();
             driver.Navigate().GoToUrl(baseUrl);
+            LoggingOfTests.DuringTesting(chromeLogs, " -> Zadali jsme URL pro Teams.");
         }
 
         [Test]
