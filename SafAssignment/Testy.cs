@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;              // [SetUp, TearDown, ... atd]
 using OpenQA.Selenium;              // IWebDriver, IWebElement
 using OpenQA.Selenium.Chrome;       // ChromeDriver
+using OpenQA.Selenium.Interactions; // Actions
 using OpenQA.Selenium.Support.UI;   // WebDriverWait
 using SeleniumExtras.WaitHelpers;   // ExpectedConditions
 
@@ -15,25 +16,62 @@ namespace SafAssignment
          *          Metoda [TearDown] zaloguje výsledek testu
          */
 
-        // --- Constanty a IWebDriver ---
-        protected IWebDriver prohlizec;
-        protected const string url = "https://teams.microsoft.com/";
-        protected const string jmeno = "dlp.automation3@safeticadlptesting.onmicrosoft.com";
-        protected const string jmenoId = "i0116";
-        protected const string prihlaseniTlacitkoDalsi = "idSIButton9";
-        protected const string heslo = "Password.dlp";
-        protected const string hesloId = "i0118";
-        protected const string prihlaseniTlacitkoNe = "idBtn_Back";
-        protected const string menuChatId = "app-bar-86fcd49b-61a2-4701-b771-54728cd291fb";
-        protected const string automationChatTitle = "DLP Automation3";
+        // *** Constanty a IWebDriver ***
+        // Driver
+        protected IWebDriver driver;
 
-        // --- Metody ---
+        // URL
+        protected const string baseUrl = "https://teams.microsoft.com/";
+        protected const string chatUrl = "https://teams.microsoft.com/_#/conversations/48:notes?ctx=chat";
+
+        // Prihlaseni
+        protected const string input_name = "dlp.automation3@safeticadlptesting.onmicrosoft.com";
+        protected const string id_name = "i0116";
+        protected const string id_loginNext = "idSIButton9";
+        protected const string input_password = "Password.dlp";
+        protected const string id_password = "i0118";
+        protected const string id_loginNextNo = "idBtn_Back";
+
+        // Menu -> Chat
+        protected const string xPath_blockingPopup = "//button[@type='button' and @role='button' and @title='Zavřít']";
+        protected const string id_menuChat = "app-bar-86fcd49b-61a2-4701-b771-54728cd291fb";
+
+        // Pripoj soubory
+        protected const string cssSelector_addFiles = ".fui-Flex:nth-child(2) .ui-toolbar__item:nth-child(2) .ui-icon > .jr";
+        protected const string cssSelector_addFilesFromDrive = ".ui-menu__itemwrapper:nth-child(1) .fui-StyledText";
+
+        // Soubory
+        protected const string xPath_findExcelByText = "//*[contains(text(),'ExcelFile.xlsx')]";
+        protected const string xPath_findPresentationByText = "//*[contains(text(),'Presentation.xlsx')]";
+        protected const string xPath_buttonAddFileByText = "//*[contains(text(),'Připojit')]";
+
+        // Text
+        protected const string cssSelector_chatWindow = ".ck-placeholder";
+        protected string chatText = "Test";
+
+        // Chat -> Odesílání
+        protected const string cssSelector_sendChatContents = ".ms-FocusZone:nth-child(3) .ui-icon > .jq";
+
+
+        // *** Metody ***
+        // WaitForElementToBeVisible čeká na zobrazení elementu na stránce (30 vteřin, jinak Timeout)
         public IWebElement WaitForElementToBeVisible(By by, int vteriny = 30)
         {
-            // vytvoří WebDriverWait, který čeká než se zobrazí element na stránce
-            var waitVisible = new WebDriverWait(prohlizec, TimeSpan.FromSeconds(vteriny));     
+            var waitVisible = new WebDriverWait(driver, TimeSpan.FromSeconds(vteriny));     
             return waitVisible.Until(ExpectedConditions.ElementIsVisible(by));
         }
+
+        //
+
+        public void ElementAndClick(By element)
+        {
+            IWebElement passedElement = WaitForElementToBeVisible(element);
+            passedElement.Click();
+        }
+        // priklad uziti:
+        // id ->            ElementAndClick(By.Id("tady-bude-nejaky-string"));
+        // Xpath ->         ElementAndClick(ByXPath("tady-bude-nejaky-string"));
+        // CssSelector ->   ElementAndClick(By.CssSelector("tady-bude-nejaky-string"));
 
         public void PrihlaseniDal(string prihlaseniTlacitkoDalsi)
         {
@@ -45,13 +83,13 @@ namespace SafAssignment
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
-            prohlizec = new ChromeDriver();
+            driver = new ChromeDriver();
         }
 
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
-            prohlizec.Quit();
+            driver.Quit();
         }
 
         // --- SetUp&TearDown - běží před a po každém testu ---
@@ -79,59 +117,106 @@ namespace SafAssignment
         [Test, Order(1)]
         public void T01_NacistStranku()
         {
-            prohlizec.Manage().Window.Maximize();
-            prohlizec.Navigate().GoToUrl(url);
+            driver.Manage().Window.Maximize();
+            driver.Navigate().GoToUrl(baseUrl);
         }
 
         [Test, Order(2)]
         public void T02_ZadatJmeno()
         {
             // pocka na pole jmena, vyplni, overi vyplneni
-            IWebElement poleJmeno = WaitForElementToBeVisible(By.Id(jmenoId));
-            poleJmeno.SendKeys(jmeno);
-            Assert.AreEqual(jmeno, poleJmeno.GetAttribute("value"));
+            IWebElement poleJmeno = WaitForElementToBeVisible(By.Id(id_name));
+            poleJmeno.SendKeys(input_name);
+            Assert.AreEqual(input_name, poleJmeno.GetAttribute("value"));
 
             // pocka na zobrazeni tlacitka, klikne (posune nás k heslu)
-            PrihlaseniDal(prihlaseniTlacitkoDalsi);
+            PrihlaseniDal(id_loginNext);
         }
 
         [Test, Order(3)]
         public void T03_ZadatHeslo()
         {
             // pocka na pole hesla, vyplni, overi vyplneni
-            IWebElement poleHeslo = WaitForElementToBeVisible(By.Id(hesloId));
-            poleHeslo.SendKeys(heslo);
-            Assert.AreEqual(heslo, poleHeslo.GetAttribute("value"));
+            IWebElement poleHeslo = WaitForElementToBeVisible(By.Id(id_password));
+            poleHeslo.SendKeys(input_password);
+            Assert.AreEqual(input_password, poleHeslo.GetAttribute("value"));
 
             // pocka na zobrazeni tlacitka, klikne (posune nás k otravné tabulce)
-            PrihlaseniDal(prihlaseniTlacitkoDalsi);
-            PrihlaseniDal(prihlaseniTlacitkoNe);
+            PrihlaseniDal(id_loginNext);
+            PrihlaseniDal(id_loginNextNo);
         }
 
         [Test, Order(4)]
         public void T04_LocateAutomaTion()
         {
-            IWebElement closeButton = WaitForElementToBeVisible(By.XPath("//button[@type='button' and @role='button' and @title='Zavřít']"));
+            IWebElement closeButton = WaitForElementToBeVisible(By.XPath(xPath_blockingPopup));
             closeButton.Click();
 
-            IWebElement menuChat = WaitForElementToBeVisible(By.Id(menuChatId));
+            IWebElement menuChat = WaitForElementToBeVisible(By.Id(id_menuChat));
             menuChat.Click();
 
-            //switch na Frame 0, jinak to na te strance nenajde ten selector
-            prohlizec.SwitchTo().Frame(0);
+            // overeni ze jsme na spravnem miste
+            Thread.Sleep(4000);                                       // chvile na nacteni stranky
+            string currentUrl = driver.Url;                           // opravdova url
+            Assert.AreEqual(chatUrl, currentUrl);                     // overeni
+        }
 
-            IWebElement pripojSoubory = WaitForElementToBeVisible(By.CssSelector(".fui-Flex:nth-child(2) .ui-toolbar__item:nth-child(2) .ui-icon > .jr"));
+        [Test, Order(5)]
+        public void T05_LocateDrive()
+        {
+            driver.SwitchTo().DefaultContent(); 
+            driver.SwitchTo().Frame(0);
+
+            IWebElement pripojSoubory = WaitForElementToBeVisible(By.CssSelector(cssSelector_addFiles));
             pripojSoubory.Click();
 
-            IWebElement pripojSouboryDrive = WaitForElementToBeVisible(By.CssSelector(".ui-menu__itemwrapper:nth-child(1) .fui-StyledText"));
+            IWebElement pripojSouboryDrive = WaitForElementToBeVisible(By.CssSelector(cssSelector_addFilesFromDrive));
             pripojSouboryDrive.Click();
+        }
 
-            // zábava...ted potrebuju vybrat soubory, ale xpath a selector zase nefunguje. neni to v default frame, v 0, a 1 mi hazi chybu ze neexistuje :)
+        [Test, Order(6)]
+        public void T06_SelectExcelFile()
+        {
+            /*default -> frame0 -> frame 0*/
+            driver.SwitchTo().DefaultContent();
+            driver.SwitchTo().Frame(0);          // 0 frame
+            Thread.Sleep(2000);
+            driver.SwitchTo().Frame(0);          // 0 frame nested v predchozim 0 frame + čekání
 
-            //prohlizec.SwitchTo().DefaultContent();
-            //prohlizec.SwitchTo().Frame(1);
-            //prohlizec.SwitchTo().Frame(prohlizec.FindElement(By.XPath("//iframe[@aria-label='Otevírání výběru souborů']")));
-        } 
+            IWebElement vyberExcel = WaitForElementToBeVisible(By.XPath(xPath_findExcelByText));
+            vyberExcel.Click();
+            IWebElement pripojit = WaitForElementToBeVisible(By.XPath(xPath_buttonAddFileByText));
+            pripojit.Click();
+        }
+
+        [Test, Order(7)]
+        public void T07_SendExcelFile()
+        {
+            driver.SwitchTo().DefaultContent();
+            driver.SwitchTo().Frame(0);
+            Thread.Sleep(1000);
+
+            IWebElement odeslat = WaitForElementToBeVisible(By.CssSelector(cssSelector_sendChatContents));
+            odeslat.Click();
+            Thread.Sleep(3000);
+         }
+
+        [Test, Order(8)]
+        public void T08_SelectFile()
+        {
+            // zbavit se otravneho popupu ktery zmizi jakmile clovek presune mysku na obrazovku
+            Actions actions = new Actions(driver);
+            IWebElement placeholderElement = driver.FindElement(By.TagName("body"));
+            actions.MoveToElement(placeholderElement).Perform();
+
+            IWebElement napisText = WaitForElementToBeVisible(By.CssSelector(cssSelector_chatWindow));
+            napisText.SendKeys("Test!!");
+            Thread.Sleep(1000);
+
+            IWebElement odeslat = WaitForElementToBeVisible(By.CssSelector(cssSelector_sendChatContents));
+            odeslat.Click();
+            Thread.Sleep(1000);
+        }
     }
 
     public class TeamsFirefoxTest
