@@ -17,9 +17,9 @@
         }
 
         // Možnost zapsání logu v [Test]
-        public static void DuringTheTest(List<string> f, string cokoliv)
+        public static void DuringTesting(List<string> f, string cokoliv)
         {
-            string log = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {cokoliv}";
+            string log = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - Poznamka z testu {cokoliv}";
             f.Add(log);
         }
 
